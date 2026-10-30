@@ -61,6 +61,8 @@ The code is on GitHub: `github.com/badinwatt-sin/agency-weekly-task-planner`. `.
 
 **Using Vercel instead:** the same environment variables apply; choose region Singapore (`sin1`). Vercel's free Hobby plan is for non-commercial use, so use Vercel Pro for agency work.
 
+On Vercel: **Settings → Environment Variables**, add each variable above for *Production* (and *Preview* if you use preview links), then **Deployments → ⋯ → Redeploy** — variables added after a deploy only take effect on the next deploy. `NEXT_PUBLIC_SITE_URL` may be left out on Vercel (the production `.vercel.app` address is used). `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is accepted in place of `NEXT_PUBLIC_SUPABASE_ANON_KEY`. If something is missing, the sign-in page lists which variable (by name only) instead of showing the app.
+
 ## D. Create the Manager's account (one time)
 
 Done on any computer with Node.js 20+, by the person setting up the system together with Keng:

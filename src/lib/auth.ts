@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { publicEnvReady } from "./env";
 import { createClient } from "./supabase/server";
 import type { CurrentUser, Member } from "./types";
 
@@ -12,6 +13,7 @@ export const MEMBER_COLUMNS = "id, full_name, display_name, role, is_active, acc
  * accounts without a roster entry resolve to null.
  */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  if (!publicEnvReady()) return null;
   const supabase = await createClient();
   const {
     data: { user },
@@ -27,6 +29,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 export async function requireUser(): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) {
+    if (!publicEnvReady()) redirect("/login");
     const supabase = await createClient();
     const {
       data: { user: authUser },

@@ -1,12 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { publicEnvReady, SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/env";
 
 // Pages anyone may open. Everything else requires a signed-in session;
 // the pages themselves then check the roster and role on the server.
 const PUBLIC_PATHS = ["/login", "/forgot-password", "/auth/confirm", "/auth/signout", "/set-password"];
 
 function contentSecurityPolicy(nonce: string): string {
-  const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const supabase = SUPABASE_URL;
   const realtime = supabase.replace(/^https:/, "wss:");
   const dev = process.env.NODE_ENV !== "production";
   return [
@@ -37,28 +38,30 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next({ request: { headers: forwardHeaders() } });
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   let signedIn = false;
 
-  if (url && key) {
-    const supabase = createServerClient(url, key, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
+  if (publicEnvReady()) {
+    try {
+      const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            response = NextResponse.next({ request: { headers: forwardHeaders() } });
+            cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request: { headers: forwardHeaders() } });
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-        },
-      },
-    });
-    // Refreshes the session cookie if needed. Do not put code between createServerClient and getUser().
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    signedIn = !!user;
+      });
+      // Refreshes the session cookie if needed. Do not put code between createServerClient and getUser().
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      signedIn = !!user;
+    } catch {
+      signedIn = false; // Supabase unreachable or misconfigured: treat as signed out
+    }
   }
 
   const path = request.nextUrl.pathname;
