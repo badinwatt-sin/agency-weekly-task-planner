@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   experimental: {
-    serverActions: { bodySizeLimit: "25mb" }, // meeting notes may include photos / Word files
+    serverActions: { bodySizeLimit: "4.5mb" }, // matches the Vercel request limit; photos are shrunk in the browser first
   },
   async headers() {
     return [

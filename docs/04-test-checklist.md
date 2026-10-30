@@ -67,6 +67,8 @@ Run on a **staging** deployment (separate Supabase project) with a few test task
 | 3b.6 | Untick one new task, change another's owner and due date, edit the summary; Save | Only ticked tasks created, with the edits; summary and per-person updates shown on the meeting page |
 | 3b.7 | Between Summarize and Save, change one of the listed existing tasks elsewhere | Its status change is skipped (message says so); the progress note is still posted |
 | 3b.8 | Use a wrong API key | Clear "API key was refused" message; nothing saved |
+| 3b.9 | Upload three large phone photos (4–8 MB each) | Each is resized on the phone (file list shows a few hundred KB, .jpg); summary works. Files over 4 MB in total → clear "limit is 4.0 MB" message |
+| 3b.10 | Deploy with one environment variable removed; open the site | Sign-in page shows "Setup not finished" naming that variable, not "Application error" |
 
 ## 4. Search and filters
 | # | Steps | Expected |

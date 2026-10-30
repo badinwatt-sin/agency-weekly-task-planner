@@ -59,9 +59,22 @@ The code is on GitHub: `github.com/badinwatt-sin/agency-weekly-task-planner`. `.
 
 **Claude API key (meeting summaries):** at [platform.claude.com](https://platform.claude.com) → add a payment method → **API keys → Create key** → paste into `ANTHROPIC_API_KEY`. Set a **monthly spend limit** (e.g. $5) under *Limits*. Without a key, the planner works normally and the Manager adds meeting items by hand.
 
-**Using Vercel instead:** the same environment variables apply; choose region Singapore (`sin1`). Vercel's free Hobby plan is for non-commercial use, so use Vercel Pro for agency work.
+### C2. Deploying on Vercel instead
 
-On Vercel: **Settings → Environment Variables**, add each variable above for *Production* (and *Preview* if you use preview links), then **Deployments → ⋯ → Redeploy** — variables added after a deploy only take effect on the next deploy. `NEXT_PUBLIC_SITE_URL` may be left out on Vercel (the production `.vercel.app` address is used). `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is accepted in place of `NEXT_PUBLIC_SUPABASE_ANON_KEY`. If something is missing, the sign-in page lists which variable (by name only) instead of showing the app.
+Vercel's free Hobby plan is for personal, non-commercial use; for agency work use **Vercel Pro** (one paid seat for whoever administers it — team members only sign in to the app and don't need Vercel accounts).
+
+1. [vercel.com](https://vercel.com) → **Add New → Project** → import `agency-weekly-task-planner` from GitHub. Framework is detected as Next.js; keep the defaults.
+2. Before pressing Deploy, open **Environment Variables** and add the same variables as the table above (tick *Production*; add *Preview* too if you use preview links). Mark the server-only ones **Sensitive**.
+   - `NEXT_PUBLIC_SITE_URL` may be left out: the production `….vercel.app` address is used automatically. Set it if you add your own domain.
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is accepted in place of `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Deploy. **If you add or change a variable later, redeploy** (Deployments → ⋯ → Redeploy) — new values only apply to the next deployment.
+4. In Supabase (step A5) set the Site URL and redirect URL to the Vercel address, e.g. `https://your-project.vercel.app` and `https://your-project.vercel.app/**`.
+
+Already set up in the code for Vercel:
+- `vercel.json` runs the server in **Singapore (`sin1`)**, next to a Supabase project in Singapore. If your Supabase project is in another region, change it to the nearest Vercel region.
+- Vercel accepts at most **4.5 MB per request**, so meeting photos are shrunk in the browser (1600 px, JPEG) before upload and one summary accepts up to 4 MB in total.
+- The meeting summarizer may run for up to **5 minutes** (`maxDuration = 300`).
+- If a setting is missing, the sign-in page lists which variable (by name only) instead of failing with "Application error".
 
 ## D. Create the Manager's account (one time)
 

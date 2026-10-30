@@ -10,6 +10,9 @@ import { todayIso } from "@/lib/dates";
 import { createMeeting } from "../actions";
 
 export const metadata = { title: "Record meeting" };
+// The "Summarize with Claude" server action runs in this page's function; allow
+// up to 5 minutes (the Vercel Hobby/Pro default ceiling) for long meetings.
+export const maxDuration = 300;
 
 export default async function NewMeetingPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   await requireManager();

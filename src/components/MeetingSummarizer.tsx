@@ -9,6 +9,38 @@ import { Icon } from "./Icon";
 import { Notice, StatusBadge } from "./ui";
 
 const ACCEPT = ".txt,.md,.csv,.tsv,.json,.docx,text/plain,text/markdown,text/csv,image/png,image/jpeg,image/webp,image/gif";
+// Hosting platforms cap one request at ~4.5 MB (Vercel), so photos are shrunk in the
+// browser first. 1600 px on the long side is still sharp enough for Claude to read text.
+const MAX_SIDE = 1600;
+const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
+
+async function shrinkImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
+    if (scale === 1 && file.size < 700_000) {
+      bmp.close();
+      return file;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bmp.width * scale));
+    canvas.height = Math.max(1, Math.round(bmp.height * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.fillStyle = "#ffffff"; // transparent screenshots → white, not black, in JPEG
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    bmp.close();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.jpg`, { type: "image/jpeg" });
+  } catch {
+    return file; // the server still checks size and type
+  }
+}
+
+const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 export function MeetingSummarizer({ members, projects, today, enabled }: { members: Member[]; projects: Project[]; today: string; enabled: boolean }) {
   const [title, setTitle] = useState("Weekly team meeting");
@@ -22,17 +54,33 @@ export function MeetingSummarizer({ members, projects, today, enabled }: { membe
   const fileRef = useRef<HTMLInputElement>(null);
   const memberOpts = members.filter((m) => m.is_active);
 
-  function addFiles(list: FileList | null) {
-    if (!list) return;
-    const next = [...files];
-    for (const f of list) if (!next.some((x) => x.name === f.name && x.size === f.size)) next.push(f);
-    setFiles(next.slice(0, 10));
+  const [preparing, setPreparing] = useState(false);
+
+  async function addFiles(list: FileList | null) {
+    if (!list || !list.length) return;
+    const picked = Array.from(list);
     if (fileRef.current) fileRef.current.value = "";
+    setPreparing(true);
+    try {
+      const ready = await Promise.all(picked.map(shrinkImage));
+      setFiles((current) => {
+        const next = [...current];
+        for (const f of ready) if (!next.some((x) => x.name === f.name && x.size === f.size)) next.push(f);
+        return next.slice(0, 10);
+      });
+    } finally {
+      setPreparing(false);
+    }
   }
 
   function summarize() {
     setError("");
     if (!notes.trim() && !files.length) { setError("Paste the notes or upload a file first."); return; }
+    const total = files.reduce((n, f) => n + f.size, 0) + new Blob([notes]).size;
+    if (total > MAX_TOTAL_BYTES) {
+      setError(`The notes and files add up to ${mb(total)}; the limit is ${mb(MAX_TOTAL_BYTES)} per summary. Remove a file, or summarize in two parts.`);
+      return;
+    }
     const fd = new FormData();
     fd.set("meeting_date", date);
     fd.set("notes", notes);
@@ -88,11 +136,11 @@ export function MeetingSummarizer({ members, projects, today, enabled }: { membe
         <div>
           <span className="text-sm font-medium">Or upload files</span>
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <button type="button" className="btn-secondary" onClick={() => fileRef.current?.click()}>
-              <Icon name="folder" size={16} /> Choose files…
+            <button type="button" className="btn-secondary" onClick={() => fileRef.current?.click()} disabled={preparing}>
+              <Icon name="folder" size={16} /> {preparing ? "Preparing…" : "Choose files…"}
             </button>
-            <input ref={fileRef} type="file" multiple accept={ACCEPT} hidden onChange={(e) => addFiles(e.target.files)} />
-            <span className="text-xs text-muted">Text, CSV, Word (.docx), or photos / screenshots of notes such as a LINE chat. For a PDF, paste its text above.</span>
+            <input ref={fileRef} type="file" multiple accept={ACCEPT} hidden onChange={(e) => void addFiles(e.target.files)} />
+            <span className="text-xs text-muted">Text, CSV, Word (.docx), or photos / screenshots of notes such as a LINE chat (resized automatically). Up to 4 MB in total. For a PDF, paste its text above.</span>
           </div>
           {files.length > 0 && (
             <ul className="mt-2 space-y-1">
@@ -110,7 +158,7 @@ export function MeetingSummarizer({ members, projects, today, enabled }: { membe
         {error && <Notice tone="error">{error}</Notice>}
         {!enabled && <Notice tone="warn">The summarizer needs a Claude API key (ANTHROPIC_API_KEY) in the hosting settings. Until then, use “Add items by hand”.</Notice>}
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" className="btn-primary" onClick={summarize} disabled={busy || !enabled}>
+          <button type="button" className="btn-primary" onClick={summarize} disabled={busy || preparing || !enabled}>
             {busy ? "Claude is reading the notes…" : draft ? "Summarize again" : "Summarize with Claude"}
           </button>
           {busy && <span className="text-xs text-muted">This usually takes 20–60 seconds.</span>}
