@@ -1,0 +1,15 @@
+<!-- Supabase → Authentication → Emails → "Reset password". Subject: Reset your Task Planner password -->
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#0f1b2d">
+  <div style="background:#0b1f3a;color:#ffffff;padding:20px 24px;border-radius:12px 12px 0 0">
+    <strong style="font-size:18px">Agency Weekly Task Planner</strong>
+  </div>
+  <div style="border:1px solid #e1e6ef;border-top:0;padding:24px;border-radius:0 0 12px 12px">
+    <p>Hello,</p>
+    <p>We received a request to set a new password for your planner account.</p>
+    <p style="margin:28px 0">
+      <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery"
+         style="background:#2952cc;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Choose a new password</a>
+    </p>
+    <p style="font-size:13px;color:#56657e">This link works once and expires after a limited time. If you didn't ask for this, ignore this email — your current password keeps working.</p>
+  </div>
+</div>

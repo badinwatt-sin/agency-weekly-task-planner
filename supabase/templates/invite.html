@@ -1,0 +1,16 @@
+<!-- Supabase → Authentication → Emails → "Invite user". Subject: You're invited to the Agency Weekly Task Planner -->
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#0f1b2d">
+  <div style="background:#0b1f3a;color:#ffffff;padding:20px 24px;border-radius:12px 12px 0 0">
+    <strong style="font-size:18px">Agency Weekly Task Planner</strong>
+  </div>
+  <div style="border:1px solid #e1e6ef;border-top:0;padding:24px;border-radius:0 0 12px 12px">
+    <p>Hello,</p>
+    <p>The Manager has created your account for the team's weekly task planner.</p>
+    <p>Press the button to choose your personal password. You will then sign in with your <strong>employee ID</strong> and that password.</p>
+    <p style="margin:28px 0">
+      <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite"
+         style="background:#2952cc;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Choose my password</a>
+    </p>
+    <p style="font-size:13px;color:#56657e">This link works once and expires after a limited time — if it has expired, use “Forgot password” on the sign-in page. If you weren't expecting this email, you can ignore it.</p>
+  </div>
+</div>

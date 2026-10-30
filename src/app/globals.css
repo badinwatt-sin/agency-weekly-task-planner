@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-plex), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+
+  --color-navy-950: #061024;
+  --color-navy-900: #0b1f3a;
+  --color-navy-800: #13294b;
+  --color-navy-700: #1d3762;
+  --color-royal-700: #1f3fa8;
+  --color-royal-600: #2952cc;
+  --color-royal-500: #3d68e6;
+  --color-royal-100: #dfe7ff;
+  --color-royal-50: #eef3ff;
+
+  --color-canvas: #f4f6fb;
+  --color-line: #e1e6ef;
+  --color-ink: #0f1b2d;
+  --color-muted: #56657e;
+
+  /* Status colours — used consistently on cards, charts and badges */
+  --color-st-backlog: #64748b;
+  --color-st-todo: #2952cc;
+  --color-st-doing: #c27803;
+  --color-st-done: #0f8a5f;
+  --color-st-overdue: #c81e1e;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-canvas text-ink antialiased;
+    font-feature-settings: "tnum" 1;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-royal-500);
+    outline-offset: 2px;
+  }
+  input,
+  select,
+  textarea {
+    @apply rounded-lg border border-line bg-white px-3 py-2 text-base text-ink shadow-xs sm:text-sm;
+    min-height: 2.75rem; /* 16px text on phones stops iOS zooming into fields */
+  }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    @apply border-royal-500 outline-none ring-2 ring-royal-100;
+  }
+  input[type="checkbox"] {
+    min-height: auto;
+    @apply h-4 w-4 rounded p-0 accent-royal-600;
+  }
+  label {
+    @apply text-sm font-medium text-ink;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex min-h-11 sm:min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply inline-flex min-h-11 sm:min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-royal-600 text-white hover:bg-royal-700;
+  }
+  .btn-secondary {
+    @apply inline-flex min-h-11 sm:min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 border border-line bg-white text-navy-900 hover:border-royal-500 hover:text-royal-700;
+  }
+  .btn-ghost {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 text-navy-800 hover:bg-royal-50;
+  }
+  .btn-danger {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 border border-red-200 bg-white text-red-700 hover:bg-red-50;
+  }
+  .btn-sm {
+    min-height: 2rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  .card {
+    @apply rounded-xl border border-line bg-white shadow-xs;
+  }
+  .field-error {
+    @apply mt-1 text-xs font-medium text-red-700;
+  }
+  .table {
+    @apply w-full border-collapse text-sm;
+  }
+  .table th {
+    @apply border-b border-line px-3 py-2 text-left text-xs font-semibold tracking-wide text-muted uppercase;
+  }
+  .table td {
+    @apply border-b border-line px-3 py-2 align-top;
+  }
+  .num-link {
+    @apply rounded px-1 font-semibold text-royal-700 underline-offset-2 hover:bg-royal-50 hover:underline;
+  }
+}
