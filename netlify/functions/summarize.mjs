@@ -3,28 +3,13 @@
 //   mode "read"      – transcribe ONE photo / PDF into text      (~5-20 s)
 //   mode "summarize" – turn the combined text into the summary   (~15-40 s)
 // Nothing is stored on the server.
-import crypto from "node:crypto";
+import { guard, json } from "../lib/auth.mjs";
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
 const API_VERSION = "2026-10-21";
 const CALL_TIMEOUT_MS = 52_000; // stay under Netlify's 60 s wall
 
 export const config = { path: "/api/summarize", method: "POST" };
-
-// Best-effort brute-force guard (per warm instance; use a long password)
-const fails = new Map();
-const tooManyFails = (ip) => {
-  const f = fails.get(ip);
-  return f && f.n >= 8 && Date.now() - f.t < 15 * 60 * 1000;
-};
-const noteFail = (ip) => {
-  const f = fails.get(ip);
-  fails.set(ip, f && Date.now() - f.t < 15 * 60 * 1000 ? { n: f.n + 1, t: f.t } : { n: 1, t: Date.now() });
-};
-const samePassword = (a, b) =>
-  crypto.timingSafeEqual(crypto.createHash("sha256").update(String(a)).digest(), crypto.createHash("sha256").update(String(b)).digest());
-
-const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 
 const isDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s));
 const str = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
@@ -35,14 +20,14 @@ const READ_PROMPT = `Transcribe everything written in this file so it can be use
 - For chat screenshots keep "sender: message" lines in order. For tables keep one row per line. For handwriting or whiteboards, read as carefully as you can and write [unclear] where you cannot.
 - Do not summarize, translate or add anything. Output only the transcription.`;
 
-function summaryPrompt({ meetingDate, title, text }) {
+function summaryPrompt({ meetingDate, title, text, open, names }) {
   const d = new Date(`${meetingDate}T00:00:00Z`);
   const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   return `You turn raw notes from a weekly team meeting into a clear summary of who does what and by when.
 
 Meeting date: ${meetingDate} (${days[d.getUTCDay()]}). Resolve relative dates ("Friday", "next Tuesday", "ศุกร์นี้", "สัปดาห์หน้า", "พรุ่งนี้") from this date. Weeks run Monday to Sunday.
 Meeting title: ${title || "(none)"}
-
+${names.length ? `\nPeople already on the team list (reuse these exact spellings when the notes mean the same person): ${names.join(", ")}\n` : ""}${open.length ? `\nTasks that are still OPEN from earlier meetings (id | person | task | due | status):\n${open.map((t) => `${t.id} | ${t.person} | ${t.task} | ${t.due || "-"} | ${t.status}`).join("\n")}\n` : ""}
 Rules:
 - Use ONLY what the notes say. Never invent people, tasks or dates. If a date is not stated or cannot be worked out, use null.
 - Keep each person's name exactly as written in the notes (nickname or full name). Merge the same person written two ways.
@@ -52,6 +37,7 @@ Rules:
 - "attention" lists what the manager should follow up: blockers, missing owners or dates, dependencies between people, risks. Max 6, each one short and specific.
 - "highlights": the 3-5 most important things from the meeting, one short line each.
 - "decisions": decisions that were made, if any (can be empty).
+- Continuing work: if a task in the notes is the SAME work as one of the open tasks above (same person, same piece of work, even if reworded), set "match" to that task's id and do not create a second task. Use "status" for what the notes now say (e.g. "done" when it is finished, "blocked" when stuck) and "due" if the deadline changed or is newly stated, otherwise keep null. If it is genuinely new work, "match" is null. Open tasks that are not mentioned at all must NOT be listed.
 - Write all text fields in the language of the notes. Dates are always YYYY-MM-DD.
 
 Reply with ONE JSON object and nothing else, in exactly this shape:
@@ -61,7 +47,7 @@ Reply with ONE JSON object and nothing else, in exactly this shape:
   "highlights": ["..."],
   "people": [
     { "name": "...", "note": "one short line about this person's week, or empty string",
-      "tasks": [ { "task": "...", "due": "YYYY-MM-DD or null", "due_text": "wording used in the notes, or null", "status": "new|doing|done|blocked|unclear", "priority": "high|medium|low" } ] }
+      "tasks": [ { "task": "...", "due": "YYYY-MM-DD or null", "due_text": "wording used in the notes, or null", "status": "new|doing|done|blocked|unclear", "priority": "high|medium|low", "match": "id of an open task above, or null" } ] }
   ],
   "attention": [ { "kind": "blocker|missing|dependency|risk", "text": "..." } ],
   "decisions": ["..."]
@@ -91,7 +77,7 @@ export function extractJson(text) {
 }
 
 // Never trust the model's shape: keep only what the screen can safely show.
-export function clean(raw) {
+export function clean(raw, validIds = new Set()) {
   const o = raw && typeof raw === "object" ? raw : {};
   const list = (v, n, k) => (Array.isArray(v) ? v : []).map((x) => str(x, n)).filter(Boolean).slice(0, k);
   return {
@@ -109,6 +95,7 @@ export function clean(raw) {
             due_text: str(t?.due_text, 60) || null,
             status: oneOf(t?.status, ["new", "doing", "done", "blocked", "unclear"], "new"),
             priority: oneOf(t?.priority, ["high", "medium", "low"], "medium"),
+            match: typeof t?.match === "string" && validIds.has(t.match) ? t.match : null,
           }))
           .filter((t) => t.task)
           .slice(0, 30),
@@ -154,15 +141,8 @@ async function claude(content, maxTokens) {
 }
 
 export default async function handler(req) {
-  const expected = process.env.APP_PASSWORD;
-  if (!expected || expected.length < 6) return json(503, { code: "no_password", error: "ยังไม่ได้ตั้ง APP_PASSWORD (อย่างน้อย 6 ตัวอักษร) ใน Netlify" });
-
-  const ip = (req.headers.get("x-nf-client-connection-ip") || req.headers.get("x-forwarded-for") || "unknown").split(",")[0].trim();
-  if (tooManyFails(ip)) return json(429, { code: "locked", error: "ใส่รหัสผิดหลายครั้ง รอ 15 นาทีแล้วลองใหม่" });
-  if (!samePassword(req.headers.get("x-app-password") || "", expected)) {
-    noteFail(ip);
-    return json(401, { code: "bad_password", error: "รหัสผ่านไม่ถูกต้อง" });
-  }
+  const refused = guard(req);
+  if (refused) return refused;
 
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") return json(400, { error: "ข้อมูลที่ส่งมาไม่ถูกต้อง" });
@@ -185,7 +165,12 @@ export default async function handler(req) {
   const meetingDate = isDate(body.meetingDate) ? body.meetingDate : new Date().toISOString().slice(0, 10);
   const text = str(body.text, 150000);
   if (!text) return json(400, { error: "ใส่ข้อความหรือแนบไฟล์ก่อน" });
-  const r = await claude([{ type: "text", text: summaryPrompt({ meetingDate, title: str(body.title, 120), text }) }], 4500);
+  const open = (Array.isArray(body.openTasks) ? body.openTasks : [])
+    .map((t) => ({ id: str(t?.id, 40), person: str(t?.person, 80), task: str(t?.task, 200), due: isDate(t?.due) ? t.due : null, status: oneOf(t?.status, ["new", "doing", "blocked", "unclear"], "doing") }))
+    .filter((t) => t.id && t.person && t.task)
+    .slice(0, 200);
+  const names = [...new Set((Array.isArray(body.names) ? body.names : []).map((n) => str(n, 80)).filter(Boolean))].slice(0, 60);
+  const r = await claude([{ type: "text", text: summaryPrompt({ meetingDate, title: str(body.title, 120), text, open, names }) }], 5000);
   if (r.error) return json(r.status, { error: r.error });
   if (r.truncated) return json(502, { error: "สรุปยาวเกินไป ลองแบ่งการประชุมเป็นสองส่วน" });
   let parsed;
@@ -194,5 +179,5 @@ export default async function handler(req) {
   } catch {
     return json(502, { error: "อ่านคำตอบของ Claude ไม่ออก กดสรุปอีกครั้ง" });
   }
-  return json(200, { ok: true, summary: clean(parsed), meetingDate });
+  return json(200, { ok: true, summary: clean(parsed, new Set(open.map((t) => t.id))), meetingDate });
 }

@@ -154,6 +154,38 @@ h3.sec{margin:26px 4px 10px;font-size:13px;letter-spacing:.08em;text-transform:u
 .lock .card{max-width:420px;margin:0 auto;width:100%}
 .lock h1{color:#fff;text-align:center;margin:0 0 18px;font-size:24px}
 .logo{width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#5b8cff,#2952cc);margin:0 auto 14px;display:flex;align-items:center;justify-content:center}
+
+/* v2: dashboard, sync, carry-over */
+.sync{margin-left:8px;font-size:11px;letter-spacing:0;text-transform:none;font-weight:600;background:rgba(255,255,255,.14);border-radius:999px;padding:2px 10px;color:#d6e2fb}
+.sync:empty{display:none}
+.sync[data-k="err"],.sync[data-k="offline"]{background:rgba(255,184,77,.25);color:#ffe2a8}
+.chip.carry{background:var(--warnbg);color:var(--warn)}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px;gap:4px}
+.seg button{flex:1;min-height:42px;border-radius:12px;font-weight:600;color:var(--muted)}
+.seg button.on{background:linear-gradient(135deg,var(--royal),#3b6cff);color:#fff;box-shadow:0 4px 12px rgba(41,82,204,.3)}
+.pnav{display:flex;align-items:center;gap:10px}
+.pnav .pl{flex:1;text-align:center;line-height:1.3}.pnav .pl b{display:block;font-size:18px}.pnav .pl span{font-size:12.5px;color:var(--muted)}
+.pnav .icon-btn:disabled{opacity:.35}
+.sum h2 .pct{float:right;font-size:28px;color:#8fb0ff}
+.meter{height:8px;border-radius:99px;background:rgba(255,255,255,.18);margin:6px 0 12px;position:relative;z-index:1;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#5b8cff,#7ee2b8)}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.kpi{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px;text-align:left}
+.kpi b{display:block;font-size:30px;line-height:1.1}.kpi span{font-size:13px;color:var(--muted);font-weight:500}
+.kpi.ok b{color:var(--ok)}.kpi.bad b{color:var(--bad)}
+.kpi.on{border-color:var(--royal);background:var(--doingbg)}
+.legend{display:flex;gap:16px;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.lg-o{background:var(--royal)}.lg-d{background:var(--ok)}
+.b-open{fill:var(--royal)}.b-done{fill:var(--ok)}
+.bt{font-size:9px;font-weight:700;fill:var(--ink)}.bl{font-size:10px;fill:var(--muted)}.bl-axis{stroke:var(--line);stroke-width:1}
+.prow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:18px;background:var(--card);border:1.5px solid var(--line);margin-top:8px}
+.prow.on{border-color:var(--royal);background:var(--doingbg)}
+.prow .av{width:40px;height:40px;border-radius:14px;font-size:16px}
+.prow .pm{flex:1;min-width:0}.prow .pm b{display:block;line-height:1.3}
+.pbar{display:block;height:6px;border-radius:99px;background:var(--line);margin:5px 0 4px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--ok);border-radius:99px}
+.pn{font-size:12px;color:var(--muted)}.pp{font-weight:700;font-size:15px}
 </style>
 </head>
 <body>
@@ -173,7 +205,7 @@ h3.sec{margin:26px 4px 10px;font-size:13px;letter-spacing:.08em;text-transform:u
 <main id="app" class="hidden">
   <section id="viewNew">
     <header class="hero"><div class="wrap">
-      <div class="eyebrow">Weekly Meeting</div>
+      <div class="eyebrow">Weekly Meeting <span class="syncChip sync"></span></div>
       <h1>ใครทำอะไร เมื่อไร<br>สรุปให้ในไม่กี่วินาที</h1>
       <p>วางข้อความหรืออัปโหลดรูป / เอกสารจากที่ประชุม</p>
     </div></header>
@@ -202,13 +234,19 @@ h3.sec{margin:26px 4px 10px;font-size:13px;letter-spacing:.08em;text-transform:u
     </div>
   </section>
 
+  <section id="viewDash" class="hidden">
+    <header class="hero"><div class="wrap"><div class="eyebrow">Overview <span class="syncChip sync"></span></div><h1>ภาพรวมงานทีม</h1><p>งานที่เปิด / เสร็จ ตามสัปดาห์ เดือน และ YTD</p></div></header>
+    <div class="wrap pull"><div id="dashBody" class="stack"></div></div>
+  </section>
+
   <section id="viewHist" class="hidden">
-    <header class="hero"><div class="wrap"><div class="eyebrow">History</div><h1>ประวัติการสรุป</h1><p id="histSub"></p></div></header>
+    <header class="hero"><div class="wrap"><div class="eyebrow">History <span class="syncChip sync"></span></div><h1>ประวัติการสรุป</h1><p id="histSub"></p></div></header>
     <div class="wrap pull"><div id="histList"></div></div>
   </section>
 
   <nav class="tabs"><div class="in-tabs">
     <button class="tab on" id="tabNew"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>สรุปใหม่</button>
+    <button class="tab" id="tabDash"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>ภาพรวม</button>
     <button class="tab" id="tabHist"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>ประวัติ</button>
   </div></nav>
 </main>
@@ -241,55 +279,219 @@ h3.sec{margin:26px 4px 10px;font-size:13px;letter-spacing:.08em;text-transform:u
   const ATT_ICON = { blocker: "⛔", missing: "❓", dependency: "🔗", risk: "⚠️" };
   const ATT_TH = { blocker: "ติดขัด", missing: "ข้อมูลไม่ครบ", dependency: "ต้องรอกัน", risk: "ความเสี่ยง" };
 
-  let pwd = store.get("mws.pwd", "");
-  let history = store.get("mws.history", []);
-  let files = []; // {kind:'image'|'pdf'|'text', name, size, data?, media_type?, text?, preview?}
-  let current = null; // history entry shown
-  let dayFilter = null;
-
-  /* ---------- helpers ---------- */
-  const pad = (n) => String(n).padStart(2, "0");
-  const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
-  const parse = (iso) => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
-  const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); };
-  const fmtShort = (s) => parse(s).toLocaleDateString("th-TH", { weekday: "short", day: "numeric", month: "short" });
-  const fmtLong = (s) => parse(s).toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const dow = (s) => parse(s).toLocaleDateString("th-TH", { weekday: "short" });
+  /* ---------- dates ---------- */
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function iso(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+  function todayIso() { return iso(new Date()); }
+  function parse(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+  function addDays(s, n) { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); }
+  function mondayOf(s) { return addDays(s, -((parse(s).getDay() + 6) % 7)); }
+  const th = (s, o) => parse(s).toLocaleDateString("th-TH", o);
+  const fmtShort = (s) => th(s, { weekday: "short", day: "numeric", month: "short" });
+  const fmtDM = (s) => th(s, { day: "numeric", month: "short" });
+  const fmtLong = (s) => th(s, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dow = (s) => th(s, { weekday: "short" });
   const kb = (n) => (n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB");
-  function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.remove("hidden"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.add("hidden"), 2200); }
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.remove("hidden"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.add("hidden"), 2400); }
   function show(id) { ["lock", "app", "viewRes"].forEach((x) => $(x).classList.toggle("hidden", x !== id)); window.scrollTo(0, 0); }
   function showErr(id, msg) { const e = $(id); e.textContent = msg || ""; e.classList.toggle("hidden", !msg); }
 
+  /* ---------- data: entries (each meeting) + tasks (one record per piece of work) ---------- */
+  let pwd = store.get("mws.pwd", "");
+  let rev = store.get("mws.rev", 0);
+  let files = [];
+  let currentId = null;
+  let dayFilter = null;
+  let activeTab = "new";
+  let dash = { kind: "week", anchor: todayIso(), filter: { kind: "open", person: null } };
+
+  const newId = () => "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const emptyState = () => ({ v: 2, entries: [], tasks: {}, deleted: {} });
+
+  function migrateEntry(st, h) {
+    const e = { id: h.id, createdAt: h.createdAt || Date.now(), meetingDate: h.meetingDate, data: { ...h.data, people: [] } };
+    (h.data.people || []).forEach((p, pi) => {
+      const ids = [];
+      (p.tasks || []).forEach((t, ti) => {
+        const id = newId();
+        const done = t.status === "done" || (h.done && h.done[`${pi}-${ti}`]);
+        st.tasks[id] = { id, person: p.name, title: t.task, due: t.due || null, due_text: t.due_text || null, status: done ? "done" : t.status, priority: t.priority || "medium", opened: h.meetingDate, doneAt: done ? h.meetingDate : null, updatedAt: Date.now(), entry: e.id, lastEntry: e.id };
+        ids.push(id);
+      });
+      e.data.people.push({ name: p.name, note: p.note || "", taskIds: ids });
+    });
+    st.entries.push(e);
+  }
+  function loadState() {
+    const s = store.get("mws.state2", null);
+    if (s && s.v === 2) return { ...emptyState(), ...s };
+    const st = emptyState();
+    store.get("mws.history", []).forEach((h) => { try { migrateEntry(st, h); } catch {} });
+    return st;
+  }
+  let state = loadState();
+
+  // Union of two copies. The newest edit of a task wins; deletions are remembered so they stay deleted.
+  function merge(a, b) {
+    a = a || emptyState(); b = b || emptyState();
+    const deleted = { ...(a.deleted || {}), ...(b.deleted || {}) };
+    const em = new Map();
+    for (const e of [...(a.entries || []), ...(b.entries || [])]) if (!deleted[e.id] && !em.has(e.id)) em.set(e.id, e);
+    const tasks = {};
+    for (const src of [a.tasks || {}, b.tasks || {}])
+      for (const [id, t] of Object.entries(src)) {
+        if (deleted[id]) continue;
+        const c = tasks[id];
+        if (!c || (t.updatedAt || 0) > (c.updatedAt || 0)) tasks[id] = t;
+      }
+    return { v: 2, entries: [...em.values()].sort((x, y) => y.createdAt - x.createdAt), tasks, deleted };
+  }
+  function hasNewerThan(local, server) {
+    if (!server) return true;
+    const sIds = new Set((server.entries || []).map((e) => e.id));
+    if (local.entries.some((e) => !sIds.has(e.id))) return true;
+    if (Object.keys(local.deleted).some((k) => !(server.deleted || {})[k])) return true;
+    return Object.entries(local.tasks).some(([id, t]) => { const o = (server.tasks || {})[id]; return !o || (t.updatedAt || 0) > (o.updatedAt || 0); });
+  }
+
+  /* ---------- sync (browser copy is the working copy; server copy makes every device agree) ---------- */
+  let syncTimer = null, pushing = false;
+  function setSync(k) {
+    const label = { ok: "☁ ซิงค์แล้ว", saving: "☁ กำลังบันทึก…", offline: "ออฟไลน์ · เก็บในเครื่องไว้ก่อน", local: "เก็บในเครื่องนี้เท่านั้น", err: "ซิงค์ไม่สำเร็จ · ลองใหม่เอง" }[k] || "";
+    document.querySelectorAll(".syncChip").forEach((el) => { el.textContent = label; el.dataset.k = k; });
+  }
+  async function dataCall(method, body) {
+    const r = await fetch("/api/data", { method, headers: { "content-type": "application/json", "x-app-password": pwd }, body: body ? JSON.stringify(body) : undefined });
+    return { status: r.status, ...(await r.json().catch(() => ({}))) };
+  }
+  function lockOut() { store.set("mws.pwd", ""); pwd = ""; show("lock"); }
+  function persist() { store.set("mws.state2", state); scheduleSync(); }
+  function scheduleSync() { clearTimeout(syncTimer); setSync("saving"); syncTimer = setTimeout(push, 900); }
+  async function pull() {
+    try {
+      const r = await dataCall("GET");
+      if (r.status === 401) return lockOut(), false;
+      if (r.status === 503) return setSync("local"), false;
+      if (!r.ok) return setSync("err"), false;
+      rev = r.rev; store.set("mws.rev", rev);
+      const server = r.state;
+      state = merge(state, server); store.set("mws.state2", state);
+      if (hasNewerThan(state, server)) scheduleSync(); else setSync("ok");
+      return true;
+    } catch { setSync("offline"); return false; }
+  }
+  async function push() {
+    if (pushing) return scheduleSync();
+    pushing = true;
+    try {
+      for (let i = 0; i < 3; i++) {
+        const r = await dataCall("PUT", { baseRev: rev, state });
+        if (r.status === 401) return lockOut();
+        if (r.status === 503) return setSync("local");
+        if (r.ok) { rev = r.rev; store.set("mws.rev", rev); return setSync("ok"); }
+        if (r.status === 409) { state = merge(state, r.state); rev = r.rev; store.set("mws.state2", state); renderCurrent(); continue; }
+        return setSync("err");
+      }
+      setSync("err");
+    } catch { setSync("offline"); } finally { pushing = false; }
+  }
+
+  /* ---------- tasks ---------- */
+  const isDone = (t) => !!t.doneAt;
+  const taskList = () => Object.values(state.tasks);
+  function setDone(id, on) {
+    const t = state.tasks[id]; if (!t) return;
+    t.doneAt = on ? todayIso() : null; t.status = on ? "done" : "doing"; t.updatedAt = Date.now(); persist();
+  }
+  const canon = (name) => {
+    const k = String(name).trim().toLowerCase();
+    const hit = taskList().find((t) => t.person.trim().toLowerCase() === k);
+    return hit ? hit.person : String(name).trim();
+  };
+  function addSummary(summary, meetingDate) {
+    const entry = { id: newId(), createdAt: Date.now(), meetingDate, data: { title: summary.title, headline: summary.headline, highlights: summary.highlights, decisions: summary.decisions, attention: summary.attention, people: [] } };
+    const now = Date.now();
+    for (const p of summary.people) {
+      const person = canon(p.name);
+      const ids = [];
+      for (const t of p.tasks) {
+        const ex = t.match && state.tasks[t.match] && !isDone(state.tasks[t.match]) ? state.tasks[t.match] : null;
+        if (ex) {
+          ex.status = t.status === "new" ? "doing" : t.status;
+          if (t.due) { ex.due = t.due; ex.due_text = t.due_text; }
+          ex.priority = t.priority; ex.updatedAt = now; ex.lastEntry = entry.id;
+          if (t.status === "done") ex.doneAt = meetingDate;
+          ids.push(ex.id);
+        } else {
+          const id = newId();
+          state.tasks[id] = { id, person, title: t.task, due: t.due, due_text: t.due_text, status: t.status, priority: t.priority, opened: meetingDate, doneAt: t.status === "done" ? meetingDate : null, updatedAt: now, entry: entry.id, lastEntry: entry.id };
+          ids.push(id);
+        }
+      }
+      entry.data.people.push({ name: person, note: p.note, taskIds: ids });
+    }
+    state.entries.unshift(entry);
+    persist();
+    return entry;
+  }
+  function deleteEntry(id) {
+    const now = Date.now();
+    state.deleted[id] = now;
+    for (const t of taskList()) if (t.entry === id && t.lastEntry === id) { state.deleted[t.id] = now; delete state.tasks[t.id]; }
+    state.entries = state.entries.filter((e) => e.id !== id);
+    persist();
+  }
+
+  function taskRow(t, { person = false, entryDate = null } = {}) {
+    const done = isDone(t), late = !done && t.due && t.due < todayIso();
+    const chips = [t.due ? `<span class="chip ${late ? "late" : "due"}">📅 ${esc(fmtShort(t.due))}</span>` : t.due_text ? `<span class="chip">${esc(t.due_text)}</span>` : `<span class="chip">ไม่ระบุวัน</span>`];
+    if (done) chips.push(`<span class="chip new">✓ เสร็จ ${esc(fmtDM(t.doneAt))}</span>`);
+    else chips.push(`<span class="chip ${esc(t.status)}">${esc(STATUS_TH[t.status] || "")}</span>`);
+    if (t.priority === "high" && !done) chips.push(`<span class="chip high">🔥 ด่วน</span>`);
+    if (entryDate && t.opened < entryDate) chips.push(`<span class="chip carry">↻ ต่อจาก ${esc(fmtDM(t.opened))}</span>`);
+    if (!entryDate) chips.push(`<span class="chip">เปิด ${esc(fmtDM(t.opened))}</span>`);
+    return `<button class="tk${done ? " done" : ""}" data-id="${esc(t.id)}"><span class="ck">${done ? "✓" : ""}</span><span style="flex:1;min-width:0"><span class="tt">${person ? `<b>${esc(t.person)}</b> · ` : ""}${esc(t.title)}</span><span class="meta">${chips.join("")}</span></span></button>`;
+  }
+  function bindTasks(root, rerender) {
+    root.querySelectorAll(".tk").forEach((b) => (b.onclick = () => {
+      const t = state.tasks[b.dataset.id]; if (!t) return;
+      setDone(t.id, !isDone(t)); const y = window.scrollY; rerender(); window.scrollTo(0, y);
+    }));
+  }
+
   /* ---------- lock ---------- */
-  async function api(payload, password) {
-    const r = await fetch("/api/summarize", { method: "POST", headers: { "content-type": "application/json", "x-app-password": password }, body: JSON.stringify(payload) });
-    const j = await r.json().catch(() => ({}));
-    return { status: r.status, ...j };
+  async function api(payload) {
+    const r = await fetch("/api/summarize", { method: "POST", headers: { "content-type": "application/json", "x-app-password": pwd }, body: JSON.stringify(payload) });
+    return { status: r.status, ...(await r.json().catch(() => ({}))) };
   }
   $("lockForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    showErr("lockErr", "");
-    const p = $("pw").value;
-    const btn = e.submitter; if (btn) btn.disabled = true;
+    e.preventDefault(); showErr("lockErr", "");
+    const p = $("pw").value; const btn = e.submitter; if (btn) btn.disabled = true;
     try {
-      const r = await api({ check: true }, p);
-      if (r.ok) { pwd = p; store.set("mws.pwd", p); start(); }
-      else showErr("lockErr", r.error || "เข้าใช้งานไม่ได้");
-    } catch { showErr("lockErr", "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ลองใหม่อีกครั้ง"); }
+      pwd = p; const r = await api({ check: true });
+      if (r.ok) { store.set("mws.pwd", p); start(); } else { pwd = ""; showErr("lockErr", r.error || "เข้าใช้งานไม่ได้"); }
+    } catch { pwd = ""; showErr("lockErr", "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ลองใหม่อีกครั้ง"); }
     if (btn) btn.disabled = false;
   });
 
   /* ---------- tabs ---------- */
   function tab(which) {
-    $("viewNew").classList.toggle("hidden", which !== "new");
-    $("viewHist").classList.toggle("hidden", which !== "hist");
-    $("tabNew").classList.toggle("on", which === "new");
-    $("tabHist").classList.toggle("on", which === "hist");
+    activeTab = which;
+    ["new", "dash", "hist"].forEach((k) => {
+      $("view" + k[0].toUpperCase() + k.slice(1)).classList.toggle("hidden", k !== which);
+      $("tab" + k[0].toUpperCase() + k.slice(1)).classList.toggle("on", k === which);
+    });
     if (which === "hist") renderHistory();
+    if (which === "dash") renderDash();
     window.scrollTo(0, 0);
   }
+  function renderCurrent() {
+    if (!$("viewRes").classList.contains("hidden")) { if (state.entries.some((e) => e.id === currentId)) renderResult(); }
+    else if (activeTab === "dash") renderDash();
+    else if (activeTab === "hist") renderHistory();
+  }
   $("tabNew").onclick = () => tab("new");
+  $("tabDash").onclick = () => tab("dash");
   $("tabHist").onclick = () => tab("hist");
 
   /* ---------- files ---------- */
@@ -353,11 +555,11 @@ h3.sec{margin:26px 4px 10px;font-size:13px;letter-spacing:.08em;text-transform:u
     let last;
     for (let i = 0; i < tries; i++) {
       try {
-        const r = await api(payload, pwd);
-        if (r.status === 401) { store.set("mws.pwd", ""); pwd = ""; show("lock"); throw new Error("__locked"); }
+        const r = await api(payload);
+        if (r.status === 401) { lockOut(); throw new Error("__locked"); }
         if (r.ok) return r;
         last = new Error(r.error || "ไม่สำเร็จ");
-        if (r.status && r.status < 500 && r.status !== 429) break; // retrying won't help
+        if (r.status && r.status < 500 && r.status !== 429) break;
       } catch (e) { if (e.message === "__locked") throw e; last = new Error("เชื่อมต่อไม่ได้ ตรวจสัญญาณแล้วลองอีกครั้ง"); }
     }
     throw last;
@@ -369,14 +571,14 @@ h3.sec{margin:26px 4px 10px;font-size:13px;letter-spacing:.08em;text-transform:u
     if (!typed && !files.length) return showErr("newErr", "วางข้อความหรือแนบไฟล์ก่อนครับ");
     $("loading").classList.remove("hidden");
     try {
+      await pull(); // pick up what other devices saved, so "open tasks" is complete
       const parts = [typed];
       files.filter((f) => f.kind === "text").forEach((f) => parts.push(`--- ไฟล์: ${f.name} ---\n${f.text}`));
       const media = files.filter((f) => f.kind === "image" || f.kind === "pdf");
-      let done = 0;
+      let done = 0, next = 0;
       const out = new Array(media.length);
       const setProgress = () => { $("loadTitle").textContent = media.length ? `กำลังอ่านรูป / เอกสาร ${done}/${media.length}…` : "กำลังอ่านบันทึกประชุม…"; };
       setProgress();
-      let next = 0;
       const worker = async () => {
         while (next < media.length) {
           const i = next++, f = media[i];
@@ -391,79 +593,65 @@ h3.sec{margin:26px 4px 10px;font-size:13px;letter-spacing:.08em;text-transform:u
       parts.push(...out);
       $("loadTitle").textContent = "จับคู่ ใคร · ทำอะไร · เมื่อไร…";
       $("loadSub").textContent = "ใกล้เสร็จแล้ว";
-      const r = await call({ mode: "summarize", meetingDate: $("mDate").value || todayIso(), title: $("mTitle").value.trim(), text: parts.filter(Boolean).join("\n\n") });
+      const meetingDate = $("mDate").value || todayIso();
+      const openTasks = taskList().filter((t) => !isDone(t)).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 150)
+        .map((t) => ({ id: t.id, person: t.person, task: t.title, due: t.due, status: t.status }));
+      const names = [...new Set(taskList().map((t) => t.person))];
+      const r = await call({ mode: "summarize", meetingDate, title: $("mTitle").value.trim(), text: parts.filter(Boolean).join("\n\n"), openTasks, names });
       if (!r.summary.people.length && !r.summary.highlights.length) return showErr("newErr", "Claude ไม่พบรายการงานในข้อความนี้ ลองเพิ่มรายละเอียดว่าใครทำอะไร");
-      const entry = { id: String(Date.now()), createdAt: Date.now(), meetingDate: r.meetingDate, data: r.summary, done: {} };
-      history.unshift(entry); history = history.slice(0, 60); store.set("mws.history", history);
+      const entry = addSummary(r.summary, r.meetingDate);
       $("mText").value = ""; $("mTitle").value = ""; files = []; renderFiles();
-      openEntry(entry);
+      openEntry(entry.id);
     } catch (e) { if (e.message !== "__locked") showErr("newErr", e.message || "สรุปไม่สำเร็จ ลองอีกครั้ง"); }
     finally { $("loading").classList.add("hidden"); $("loadSub").textContent = "ใช้เวลาประมาณ 20–60 วินาที"; }
   };
 
   /* ---------- result ---------- */
-  function openEntry(entry) { current = entry; dayFilter = null; show("viewRes"); renderResult(); }
-  $("back").onclick = () => { show("app"); tab("new"); };
+  const entryById = (id) => state.entries.find((e) => e.id === id);
+  function openEntry(id) { currentId = id; dayFilter = null; show("viewRes"); renderResult(); }
+  $("back").onclick = () => { show("app"); tab(activeTab === "dash" ? "dash" : "hist"); };
   $("delBtn").onclick = () => {
-    if (!current || !confirm("ลบสรุปนี้ออกจากเครื่อง?")) return;
-    history = history.filter((h) => h.id !== current.id); store.set("mws.history", history);
-    show("app"); tab("hist");
+    if (!entryById(currentId) || !confirm("ลบสรุปนี้ออกจากเครื่อง? งานที่เกิดจากสรุปนี้จะถูกลบด้วย (ยกเว้นงานที่ถูกพูดถึงต่อในครั้งหลัง)")) return;
+    deleteEntry(currentId); show("app"); tab("hist");
   };
 
-  function stats(e) {
-    const tasks = e.data.people.flatMap((p, pi) => p.tasks.map((t, ti) => ({ ...t, key: `${pi}-${ti}`, person: p.name, pi })));
-    const end = addDays(e.meetingDate, 6);
-    return {
-      tasks,
-      total: tasks.length,
-      people: e.data.people.length,
-      week: tasks.filter((t) => t.due && t.due >= e.meetingDate && t.due <= end).length,
-      attn: e.data.attention.length + tasks.filter((t) => t.status === "blocked" || t.status === "unclear").length,
-    };
+  function entryTasks(e) {
+    return e.data.people.flatMap((p, pi) => p.taskIds.map((id) => state.tasks[id]).filter(Boolean).map((t) => ({ t, pi })));
   }
 
   function renderResult() {
-    const e = current, d = e.data, s = stats(e);
-    const isDone = (t) => t.status === "done" || e.done[t.key] === true;
+    const e = entryById(currentId); if (!e) return;
+    const d = e.data, items = entryTasks(e), tasks = items.map((x) => x.t);
+    const end = addDays(e.meetingDate, 6), today = todayIso();
+    const weekN = tasks.filter((t) => t.due && t.due >= e.meetingDate && t.due <= end).length;
+    const attn = d.attention.length + tasks.filter((t) => !isDone(t) && (t.status === "blocked" || t.status === "unclear")).length;
     const wk = Array.from({ length: 7 }, (_, i) => addDays(e.meetingDate, i));
-    const counts = Object.fromEntries(wk.map((x) => [x, s.tasks.filter((t) => t.due === x).length]));
+    const counts = Object.fromEntries(wk.map((x) => [x, tasks.filter((t) => t.due === x).length]));
     const html = [];
 
     html.push(`<div class="sum"><small>${esc(fmtLong(e.meetingDate))}</small><h2>${esc(d.title)}</h2>${d.headline ? `<p>${esc(d.headline)}</p>` : ""}</div>`);
-    html.push(`<div class="stats"><div class="stat"><b>${s.total}</b><span>งานทั้งหมด</span></div><div class="stat"><b>${s.people}</b><span>คน</span></div><div class="stat"><b>${s.week}</b><span>ครบใน 7 วัน</span></div><div class="stat warn"><b>${s.attn}</b><span>ต้องติดตาม</span></div></div>`);
-
+    html.push(`<div class="stats"><div class="stat"><b>${tasks.length}</b><span>งานทั้งหมด</span></div><div class="stat"><b>${d.people.length}</b><span>คน</span></div><div class="stat"><b>${weekN}</b><span>ครบใน 7 วัน</span></div><div class="stat warn"><b>${attn}</b><span>ต้องติดตาม</span></div></div>`);
     if (d.highlights.length) html.push(`<h3 class="sec">ประเด็นสำคัญ</h3><div class="card"><ul class="hl">${d.highlights.map((h, i) => `<li><span class="n">${i + 1}</span><span>${esc(h)}</span></li>`).join("")}</ul></div>`);
     if (d.decisions.length) html.push(`<h3 class="sec">มติที่ตกลงกัน</h3><div class="card"><ul class="hl">${d.decisions.map((h) => `<li><span class="n">✓</span><span>${esc(h)}</span></li>`).join("")}</ul></div>`);
-
-    if (s.tasks.some((t) => t.due)) {
-      html.push(`<h3 class="sec">กำหนดส่งใน 7 วัน</h3><div class="card"><div class="week">${wk.map((x) => `<button class="day${dayFilter === x ? " on" : ""}${x === todayIso() ? " today" : ""}" data-day="${x}">${esc(dow(x))}<b>${parse(x).getDate()}</b><i>${counts[x] ? `<span>${counts[x]}</span>` : ""}</i></button>`).join("")}</div>${dayFilter ? `<div class="flt"><span>แสดงเฉพาะ ${esc(fmtShort(dayFilter))}</span><button class="btn sm soft" id="clrDay">ดูทั้งหมด</button></div>` : ""}</div>`);
+    if (tasks.some((t) => t.due)) {
+      html.push(`<h3 class="sec">กำหนดส่งใน 7 วัน</h3><div class="card"><div class="week">${wk.map((x) => `<button class="day${dayFilter === x ? " on" : ""}${x === today ? " today" : ""}" data-day="${x}">${esc(dow(x))}<b>${parse(x).getDate()}</b><i>${counts[x] ? `<span>${counts[x]}</span>` : ""}</i></button>`).join("")}</div>${dayFilter ? `<div class="flt"><span>แสดงเฉพาะ ${esc(fmtShort(dayFilter))}</span><button class="btn sm soft" id="clrDay">ดูทั้งหมด</button></div>` : ""}</div>`);
     }
-
     html.push(`<h3 class="sec">รายคน</h3>`);
     d.people.forEach((p, pi) => {
-      let rows = s.tasks.filter((t) => t.pi === pi);
-      const doneN = rows.filter(isDone).length;
+      const all = items.filter((x) => x.pi === pi).map((x) => x.t);
+      let rows = all;
       if (dayFilter) rows = rows.filter((t) => t.due === dayFilter);
       if (dayFilter && !rows.length) return;
-      const pct = s.tasks.filter((t) => t.pi === pi).length ? Math.round((doneN / s.tasks.filter((t) => t.pi === pi).length) * 100) : 0;
-      const all = s.tasks.filter((t) => t.pi === pi).length;
-      html.push(`<div class="card person"><div class="p-head"><div class="av" style="background:${PALETTE[pi % PALETTE.length]}">${esc([...p.name][0] || "?")}</div><div class="nm"><b>${esc(p.name)}</b><span>${all} งาน · เสร็จ ${doneN}</span></div><div class="ring" style="--p:${pct}"><span>${pct}%</span></div></div>${p.note ? `<div class="p-note">${esc(p.note)}</div>` : ""}${rows.map((t) => {
-        const late = t.due && t.due < e.meetingDate && !isDone(t);
-        return `<button class="tk${isDone(t) ? " done" : ""}" data-key="${t.key}" ${t.status === "done" ? "disabled" : ""}><span class="ck">${isDone(t) ? "✓" : ""}</span><span style="flex:1;min-width:0"><span class="tt">${esc(t.task)}</span><span class="meta">${t.due ? `<span class="chip ${late ? "late" : "due"}">📅 ${esc(fmtShort(t.due))}</span>` : t.due_text ? `<span class="chip">${esc(t.due_text)}</span>` : `<span class="chip">ไม่ระบุวัน</span>`}<span class="chip ${esc(t.status)}">${esc(STATUS_TH[t.status])}</span>${t.priority === "high" ? `<span class="chip high">🔥 ด่วน</span>` : ""}</span></span></button>`;
-      }).join("")}</div>`);
+      const doneN = all.filter(isDone).length, pct = all.length ? Math.round((doneN / all.length) * 100) : 0;
+      html.push(`<div class="card person"><div class="p-head"><div class="av" style="background:${PALETTE[pi % PALETTE.length]}">${esc([...p.name][0] || "?")}</div><div class="nm"><b>${esc(p.name)}</b><span>${all.length} งาน · เสร็จ ${doneN}</span></div><div class="ring" style="--p:${pct}"><span>${pct}%</span></div></div>${p.note ? `<div class="p-note">${esc(p.note)}</div>` : ""}${rows.map((t) => taskRow(t, { entryDate: e.meetingDate })).join("")}</div>`);
     });
-
     if (d.attention.length) html.push(`<h3 class="sec">ต้องติดตาม</h3>` + d.attention.map((a) => `<div class="att ${esc(a.kind)}"><span class="ic">${ATT_ICON[a.kind] || "⚠️"}</span><div><b>${esc(ATT_TH[a.kind] || "ติดตาม")}</b>${esc(a.text)}</div></div>`).join(""));
-
-    html.push(`<div class="share"><button class="btn soft" id="copyBtn">📋 คัดลอกข้อความ</button><button class="btn ghost" id="shareBtn">↗ แชร์</button></div><p class="hint" style="text-align:center;margin-top:14px">แตะที่งานเพื่อติ๊กว่าเสร็จแล้ว · บันทึกในเครื่องนี้อัตโนมัติ</p>`);
+    html.push(`<div class="share"><button class="btn soft" id="copyBtn">📋 คัดลอกข้อความ</button><button class="btn ghost" id="shareBtn">↗ แชร์</button></div><p class="hint" style="text-align:center;margin-top:14px">แตะที่งานเพื่อติ๊กว่าเสร็จ — จะไปนับในหน้า “ภาพรวม” ด้วย</p>`);
     $("resBody").innerHTML = html.join("");
 
     $("resBody").querySelectorAll(".day").forEach((b) => (b.onclick = () => { dayFilter = dayFilter === b.dataset.day ? null : b.dataset.day; renderResult(); }));
     const clr = $("clrDay"); if (clr) clr.onclick = () => { dayFilter = null; renderResult(); };
-    $("resBody").querySelectorAll(".tk").forEach((b) => (b.onclick = () => {
-      current.done[b.dataset.key] = !current.done[b.dataset.key];
-      store.set("mws.history", history); const y = window.scrollY; renderResult(); window.scrollTo(0, y);
-    }));
+    bindTasks($("resBody"), renderResult);
     $("copyBtn").onclick = async () => { try { await navigator.clipboard.writeText(toText(e)); toast("คัดลอกแล้ว — วางใน LINE ได้เลย"); } catch { toast("คัดลอกไม่ได้ ลองกดแชร์แทน"); } };
     $("shareBtn").onclick = async () => {
       if (navigator.share) { try { await navigator.share({ title: d.title, text: toText(e) }); } catch {} }
@@ -472,42 +660,157 @@ h3.sec{margin:26px 4px 10px;font-size:13px;letter-spacing:.08em;text-transform:u
   }
 
   function toText(e) {
-    const d = e.data, s = stats(e);
-    const L = [`📋 ${d.title}`, fmtLong(e.meetingDate)];
+    const d = e.data, L = [`📋 ${d.title}`, fmtLong(e.meetingDate)];
     if (d.headline) L.push("", d.headline);
     if (d.highlights.length) L.push("", "⭐ ประเด็นสำคัญ", ...d.highlights.map((h) => `• ${h}`));
     if (d.decisions.length) L.push("", "✅ มติ", ...d.decisions.map((h) => `• ${h}`));
-    d.people.forEach((p, pi) => {
+    d.people.forEach((p) => {
       L.push("", `👤 ${p.name}`);
-      s.tasks.filter((t) => t.pi === pi).forEach((t) => L.push(`${t.status === "done" || e.done[t.key] ? "☑" : "☐"} ${t.task}${t.due ? ` — ${fmtShort(t.due)}` : t.due_text ? ` — ${t.due_text}` : ""}${t.status === "blocked" ? " (ติดขัด)" : ""}`));
+      p.taskIds.map((id) => state.tasks[id]).filter(Boolean).forEach((t) => L.push(`${isDone(t) ? "☑" : "☐"} ${t.title}${t.due ? ` — ${fmtShort(t.due)}` : t.due_text ? ` — ${t.due_text}` : ""}${t.status === "blocked" && !isDone(t) ? " (ติดขัด)" : ""}`));
     });
     if (d.attention.length) L.push("", "⚠️ ต้องติดตาม", ...d.attention.map((a) => `• ${a.text}`));
     return L.join("\n");
   }
 
-  /* ---------- history ---------- */
-  function renderHistory() {
-    $("histSub").textContent = history.length ? `${history.length} ครั้งที่บันทึกไว้ในเครื่องนี้` : "";
-    if (!history.length) { $("histList").innerHTML = `<div class="card empty">ยังไม่มีสรุป<br>ลองสรุปการประชุมครั้งแรกได้เลย</div>`; return; }
-    $("histList").innerHTML = history.map((h) => {
-      const s = stats(h), d = parse(h.meetingDate);
-      return `<button class="hist" data-id="${esc(h.id)}"><span class="dt"><b>${d.getDate()}</b><span>${esc(d.toLocaleDateString("th-TH", { month: "short" }))}</span></span><span class="tx"><b>${esc(h.data.title)}</b><span>${s.total} งาน · ${s.people} คน</span></span><span style="color:var(--muted)">›</span></button>`;
+  /* ---------- dashboard ---------- */
+  function lastDayOfMonth(y, m) { return iso(new Date(y, m + 1, 0)); }
+  function period(kind, anchor) {
+    const today = todayIso();
+    if (kind === "week") {
+      const s = mondayOf(anchor), e = addDays(s, 6);
+      return { start: s, end: e, label: `${fmtDM(s)} – ${fmtDM(e)}`, sub: "สัปดาห์ (จันทร์–อาทิตย์)", unit: "รายวัน",
+        buckets: Array.from({ length: 7 }, (_, i) => { const d = addDays(s, i); return { label: dow(d), start: d, end: d }; }), prev: addDays(anchor, -7), next: addDays(anchor, 7) };
+    }
+    if (kind === "month") {
+      const d = parse(anchor), y = d.getFullYear(), m = d.getMonth();
+      const s = iso(new Date(y, m, 1)), e = lastDayOfMonth(y, m), buckets = [];
+      for (let cur = s; cur <= e;) { const we = addDays(mondayOf(cur), 6), be = we > e ? e : we; buckets.push({ label: fmtDM(cur), start: cur, end: be }); cur = addDays(be, 1); }
+      return { start: s, end: e, label: th(s, { month: "long", year: "numeric" }), sub: "เดือน", unit: "รายสัปดาห์", buckets, prev: iso(new Date(y, m - 1, 1)), next: iso(new Date(y, m + 1, 1)) };
+    }
+    const y = parse(anchor).getFullYear(), cy = parse(today).getFullYear();
+    const s = `${y}-01-01`, e = y === cy ? today : `${y}-12-31`, last = y === cy ? parse(today).getMonth() : 11;
+    const buckets = Array.from({ length: last + 1 }, (_, m) => { const bs = iso(new Date(y, m, 1)), be = lastDayOfMonth(y, m); return { label: th(bs, { month: "short" }), start: bs, end: be > e ? e : be }; });
+    return { start: s, end: e, label: `ปี ${th(s, { year: "numeric" })}`, sub: `ตั้งแต่ต้นปีถึง ${fmtDM(e)} (YTD)`, unit: "รายเดือน", buckets, prev: `${y - 1}-06-15`, next: `${y + 1}-06-15` };
+  }
+  const inR = (d, s, e) => !!d && d >= s && d <= e;
+  function metrics(P) {
+    const all = taskList(), today = todayIso();
+    return {
+      opened: all.filter((t) => inR(t.opened, P.start, P.end)),
+      done: all.filter((t) => inR(t.doneAt, P.start, P.end)),
+      open: all.filter((t) => t.opened <= P.end && (!t.doneAt || t.doneAt > P.end)),
+      overdue: all.filter((t) => t.opened <= P.end && !t.doneAt && t.due && t.due < today),
+      active: all.filter((t) => t.opened <= P.end && (!t.doneAt || t.doneAt >= P.start)),
+    };
+  }
+  const KIND_TH = { opened: "งานที่เปิดใหม่", done: "งานที่เสร็จ", open: "งานที่ยังค้างอยู่", overdue: "งานเกินกำหนด" };
+
+  function chartSvg(P) {
+    const all = taskList();
+    const data = P.buckets.map((b) => ({ ...b, o: all.filter((t) => inR(t.opened, b.start, b.end)).length, d: all.filter((t) => inR(t.doneAt, b.start, b.end)).length }));
+    const max = Math.max(1, ...data.map((x) => Math.max(x.o, x.d)));
+    const W = 340, H = 150, top = 16, bot = 26, ch = H - top - bot, gw = W / data.length, bw = Math.min(16, gw * 0.34);
+    const bars = data.map((x, i) => {
+      const cx = gw * i + gw / 2, ho = (x.o / max) * ch, hd = (x.d / max) * ch;
+      return `<rect class="b-open" x="${(cx - bw - 1).toFixed(1)}" y="${(top + ch - ho).toFixed(1)}" width="${bw.toFixed(1)}" height="${ho.toFixed(1)}" rx="3"/><rect class="b-done" x="${(cx + 1).toFixed(1)}" y="${(top + ch - hd).toFixed(1)}" width="${bw.toFixed(1)}" height="${hd.toFixed(1)}" rx="3"/>${x.o ? `<text class="bt" x="${(cx - bw / 2 - 1).toFixed(1)}" y="${(top + ch - ho - 3).toFixed(1)}" text-anchor="middle">${x.o}</text>` : ""}${x.d ? `<text class="bt" x="${(cx + bw / 2 + 1).toFixed(1)}" y="${(top + ch - hd - 3).toFixed(1)}" text-anchor="middle">${x.d}</text>` : ""}<text class="bl" x="${cx.toFixed(1)}" y="${H - 8}" text-anchor="middle">${esc(x.label)}</text>`;
     }).join("");
-    $("histList").querySelectorAll(".hist").forEach((b) => (b.onclick = () => openEntry(history.find((h) => h.id === b.dataset.id))));
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="เปิดใหม่เทียบกับเสร็จ ${esc(P.unit)}"><line class="bl-axis" x1="0" y1="${top + ch}" x2="${W}" y2="${top + ch}"/>${bars}</svg>`;
+  }
+
+  function renderDash() {
+    const P = period(dash.kind, dash.anchor), M = metrics(P), today = todayIso();
+    const canNext = period(dash.kind, P.next).start <= today;
+    const total = taskList().length;
+    const rate = M.active.length ? Math.round((M.done.length / M.active.length) * 100) : 0;
+    const html = [];
+    html.push(`<div class="seg">${[["week", "สัปดาห์"], ["month", "เดือน"], ["ytd", "YTD"]].map(([k, l]) => `<button data-k="${k}" class="${dash.kind === k ? "on" : ""}">${l}</button>`).join("")}</div>`);
+    html.push(`<div class="pnav"><button class="icon-btn" id="pPrev" aria-label="ก่อนหน้า"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="pl"><b>${esc(P.label)}</b><span>${esc(P.sub)}</span></div><button class="icon-btn" id="pNext" aria-label="ถัดไป" ${canNext ? "" : "disabled"}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></div>`);
+
+    if (!total) {
+      html.push(`<div class="card empty">ยังไม่มีงานในระบบ<br>สรุปการประชุมครั้งแรก แล้วภาพรวมจะขึ้นที่นี่</div>`);
+      $("dashBody").innerHTML = html.join(""); bindDash(); return;
+    }
+
+    html.push(`<div class="sum"><small>ทำเสร็จในช่วงนี้</small><h2>${M.done.length} จาก ${M.active.length} งาน <span class="pct">${rate}%</span></h2><div class="meter"><i style="width:${rate}%"></i></div><p>เปิดใหม่ ${M.opened.length} · ค้างอยู่ ${M.open.length}${M.overdue.length ? ` · เกินกำหนด ${M.overdue.length}` : ""}</p></div>`);
+    const f = dash.filter;
+    html.push(`<div class="kpis">${[["opened", "เปิดใหม่", M.opened.length, ""], ["done", "เสร็จ", M.done.length, "ok"], ["open", "ค้าง ณ สิ้นช่วง", M.open.length, ""], ["overdue", "เกินกำหนด", M.overdue.length, "bad"]].map(([k, l, n, c]) => `<button class="kpi ${c}${f.kind === k ? " on" : ""}" data-kind="${k}"><b>${n}</b><span>${l}</span></button>`).join("")}</div>`);
+
+    html.push(`<h3 class="sec">เปิดใหม่ เทียบกับ เสร็จ (${esc(P.unit)})</h3><div class="card"><div class="legend"><span><i class="lg-o"></i>เปิดใหม่</span><span><i class="lg-d"></i>เสร็จ</span></div>${chartSvg(P)}</div>`);
+
+    // per person
+    const byP = new Map();
+    const row = (n) => { const k = n.trim().toLowerCase(); if (!byP.has(k)) byP.set(k, { name: n, opened: 0, done: 0, open: 0, active: 0 }); return byP.get(k); };
+    M.opened.forEach((t) => row(t.person).opened++); M.done.forEach((t) => row(t.person).done++); M.open.forEach((t) => row(t.person).open++); M.active.forEach((t) => row(t.person).active++);
+    const people = [...byP.values()].sort((a, b) => b.open - a.open || b.done - a.done);
+    html.push(`<h3 class="sec">รายคน</h3>`);
+    if (!people.length) html.push(`<div class="card empty">ไม่มีงานในช่วงนี้</div>`);
+    people.forEach((p, i) => {
+      const pct = p.active ? Math.round((p.done / p.active) * 100) : 0;
+      const on = f.person && f.person.toLowerCase() === p.name.trim().toLowerCase();
+      html.push(`<button class="prow${on ? " on" : ""}" data-person="${esc(p.name)}"><span class="av" style="background:${PALETTE[i % PALETTE.length]}">${esc([...p.name][0] || "?")}</span><span class="pm"><b>${esc(p.name)}</b><span class="pbar"><i style="width:${pct}%"></i></span><span class="pn">เปิดใหม่ ${p.opened} · เสร็จ ${p.done} · ค้าง ${p.open}</span></span><span class="pp">${pct}%</span></button>`);
+    });
+
+    // drill-down list
+    let list = M[f.kind] || [];
+    if (f.person) list = list.filter((t) => t.person.trim().toLowerCase() === f.person.toLowerCase());
+    list = [...list].sort((a, b) => f.kind === "done" ? (b.doneAt || "").localeCompare(a.doneAt || "") : (a.due || "9999").localeCompare(b.due || "9999"));
+    html.push(`<h3 class="sec">${esc(KIND_TH[f.kind])}${f.person ? ` · ${esc(f.person)}` : ""} (${list.length})</h3>`);
+    html.push(list.length ? `<div class="card person">${list.slice(0, 120).map((t, i) => (i ? "" : "") + taskRow(t, { person: !f.person })).join("")}</div>${list.length > 120 ? `<p class="hint" style="text-align:center">แสดง 120 รายการแรก</p>` : ""}` : `<div class="card empty">ไม่มีรายการ</div>`);
+    html.push(`<p class="hint" style="text-align:center;margin-top:14px">“เสร็จ” นับจากวันที่ติ๊กว่าเสร็จ หรือวันประชุมที่ระบุว่าเสร็จ · “เปิดใหม่” นับจากวันประชุมที่งานเริ่มถูกพูดถึง</p>`);
+    $("dashBody").innerHTML = html.join("");
+    bindDash();
+  }
+  function bindDash() {
+    const root = $("dashBody");
+    root.querySelectorAll(".seg button").forEach((b) => (b.onclick = () => { dash.kind = b.dataset.k; dash.anchor = todayIso(); renderDash(); }));
+    $("pPrev") && ($("pPrev").onclick = () => { dash.anchor = period(dash.kind, dash.anchor).prev; renderDash(); });
+    $("pNext") && ($("pNext").onclick = () => { dash.anchor = period(dash.kind, dash.anchor).next; renderDash(); });
+    root.querySelectorAll(".kpi").forEach((b) => (b.onclick = () => { dash.filter.kind = b.dataset.kind; renderDash(); }));
+    root.querySelectorAll(".prow").forEach((b) => (b.onclick = () => { const n = b.dataset.person; dash.filter.person = dash.filter.person && dash.filter.person.toLowerCase() === n.toLowerCase() ? null : n; renderDash(); }));
+    bindTasks(root, renderDash);
+  }
+
+  /* ---------- history + backup ---------- */
+  function renderHistory() {
+    const list = state.entries;
+    $("histSub").textContent = list.length ? `${list.length} ครั้งที่บันทึกไว้` : "";
+    if (!list.length) { $("histList").innerHTML = `<div class="card empty">ยังไม่มีสรุป<br>ลองสรุปการประชุมครั้งแรกได้เลย</div>`; }
+    else {
+      $("histList").innerHTML = list.map((h) => {
+        const tasks = entryTasks(h).map((x) => x.t), d = parse(h.meetingDate);
+        return `<button class="hist" data-id="${esc(h.id)}"><span class="dt"><b>${d.getDate()}</b><span>${esc(th(h.meetingDate, { month: "short" }))}</span></span><span class="tx"><b>${esc(h.data.title)}</b><span>${tasks.length} งาน · ${h.data.people.length} คน · เสร็จ ${tasks.filter(isDone).length}</span></span><span style="color:var(--muted)">›</span></button>`;
+      }).join("");
+      $("histList").querySelectorAll(".hist").forEach((b) => (b.onclick = () => openEntry(b.dataset.id)));
+    }
+    $("histList").insertAdjacentHTML("beforeend", `<div class="card" style="margin-top:18px"><b>สำรองข้อมูล</b><p class="hint" style="margin:4px 0 12px">ข้อมูลทั้งหมดซิงค์ไว้บนเซิร์ฟเวอร์แล้ว แต่เก็บไฟล์สำรองไว้อีกชุดก็อุ่นใจ</p><div class="row"><button class="btn soft sm" id="bkExport">⬇ ดาวน์โหลด</button><button class="btn ghost sm" id="bkImport">⬆ นำเข้าไฟล์</button></div><input id="bkFile" type="file" accept="application/json,.json" hidden></div>`);
+    $("bkExport").onclick = () => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], { type: "application/json" }));
+      a.download = `meeting-backup-${todayIso()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    };
+    $("bkImport").onclick = () => $("bkFile").click();
+    $("bkFile").onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      try {
+        const j = JSON.parse(await f.text());
+        if (!j || j.v !== 2 || !Array.isArray(j.entries) || typeof j.tasks !== "object") throw new Error("bad");
+        state = merge(state, j); persist(); renderHistory(); toast("นำเข้าแล้ว");
+      } catch { toast("ไฟล์นี้ไม่ใช่ไฟล์สำรองของแอป"); }
+    };
   }
 
   /* ---------- boot ---------- */
-  async function start() { show("app"); $("mDate").value = $("mDate").value || todayIso(); tab("new"); }
+  async function start() { show("app"); $("mDate").value = $("mDate").value || todayIso(); tab("new"); setSync("saving"); if (await pull()) renderCurrent(); }
   (async () => {
     $("mDate").value = todayIso();
     if (!pwd) return show("lock");
     try {
-      const r = await api({ check: true }, pwd);
+      const r = await api({ check: true });
       if (r.ok) return start();
       if (r.status === 401) { store.set("mws.pwd", ""); pwd = ""; }
       show("lock");
       if (r.error) showErr("lockErr", r.error);
-    } catch { start(); } // offline: still let the saved history open
+    } catch { show("app"); tab("new"); setSync("offline"); } // offline: saved data still opens
   })();
 })();
 </script>

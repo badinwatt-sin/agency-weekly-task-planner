@@ -2,5 +2,11 @@
   "name": "weekly-meeting-summary",
   "version": "1.0.0",
   "private": true,
-  "description": "Personal weekly meeting summarizer: notes and photos in, who-does-what-by-when out."
+  "description": "Personal weekly meeting summarizer: notes and photos in, who-does-what-by-when out.",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
 }
