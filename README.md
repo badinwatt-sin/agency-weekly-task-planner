@@ -5,24 +5,27 @@
 - ประเด็นสำคัญ · มติ · กำหนดส่งรายวัน 7 วัน · งานรายคนพร้อมวงกลมความคืบหน้า · เรื่องที่ต้องติดตาม
 - แตะงานเพื่อติ๊กว่าเสร็จ · คัดลอกเป็นข้อความส่ง LINE · แชร์
 - ประวัติเก็บในเครื่องของคุณ (localStorage) ไม่มีฐานข้อมูล ไม่เก็บอะไรบนเซิร์ฟเวอร์
-- ไม่มี build step: หน้าเว็บ `public/index.html` + ฟังก์ชันเดียว `api/summarize.js` (ไม่มี dependency)
+- ไม่มี build step: หน้าเว็บ `public/index.html` + ฟังก์ชันเดียว `netlify/functions/summarize.mjs` (ไม่มี dependency)
 
-## ตั้งค่าบน Vercel (2 ค่าเท่านั้น)
+## Deploy บน Netlify (ฟรี ใช้ในงานบริษัทได้)
 
-**Settings → Environment Variables** (ติ๊ก Production) แล้ว **Redeploy**
+1. [netlify.com](https://www.netlify.com) → **Add new site → Import an existing project** → GitHub → เลือก repo นี้ (ไม่ต้องใส่ build command; `netlify.toml` ตั้งไว้แล้ว)
+2. **Site configuration → Environment variables** เพิ่ม 2 ค่า
 
 | Name | ค่า |
 |---|---|
 | `APP_PASSWORD` | รหัสผ่านที่คุณตั้งเอง ยาว 6 ตัวขึ้นไป (ใช้เปิดแอป) |
 | `ANTHROPIC_API_KEY` | key จาก platform.claude.com (ตั้ง monthly limit ไว้ เช่น $5) |
 
-ถ้า Vercel เคยตั้ง Framework เป็น Next.js ไว้ ไฟล์ `vercel.json` จะเขียนทับให้เป็น "Other" เอง
+3. **Deploys → Trigger deploy → Clear cache and deploy site** (ค่าที่เพิ่มใหม่มีผลหลัง deploy ใหม่)
+4. เปิดบนมือถือ → Safari: Share → **Add to Home Screen** จะได้เป็นไอคอนแอป
 
-เปิดบนมือถือ → Safari: Share → **Add to Home Screen** จะได้เป็นไอคอนแอป
+## ทำไมถึงสรุปได้เร็วและไม่ค้าง
+Netlify ตัดฟังก์ชันที่ทำงานเกิน 60 วินาที แอปจึงแบ่งงานเป็นช่วงสั้น ๆ: อ่านรูป/PDF ทีละไฟล์ (ครั้งละไม่เกิน 3 ไฟล์พร้อมกัน) แล้วค่อยสรุปข้อความรวมอีกครั้ง
 
 ## ข้อจำกัด
-- Vercel รับข้อมูลต่อครั้งไม่เกิน ~4.5 MB: รูปถูกย่อในเครื่องก่อนส่ง รวมไม่เกิน ~4 MB ต่อการสรุป
+- รูปถูกย่อในเครื่องก่อนส่ง; PDF ต่อไฟล์ไม่เกิน 3.5 MB; แนบได้สูงสุด 10 ไฟล์
 - ข้อความ/รูปที่ส่งไปสรุปจะถูกประมวลผลโดย Claude API
-- ใช้ Vercel Hobby ได้ถ้าเป็นการใช้ส่วนตัวคนเดียว; ถ้าใช้เชิงธุรกิจ Vercel กำหนดให้ใช้แผน Pro
+- ประวัติอยู่ในเบราว์เซอร์ของเครื่องนั้น ถ้าล้างข้อมูลเบราว์เซอร์ ประวัติจะหาย
 
 เวอร์ชันเต็ม (ทีม 13 คน, Supabase, Kanban) อยู่ที่ branch `full-planner-v1`
