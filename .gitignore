@@ -1,14 +1,4 @@
-node_modules/
-.next/
-out/
+node_modules
 .env
-.env.local
-.env.*.local
-*.log
-.DS_Store
-next-env.d.ts
-*.tsbuildinfo
+.env.*
 .vercel
-
-# private team data
-supabase/roster.local.sql

@@ -1,75 +1,28 @@
-# Agency Weekly Task Planner
+# Weekly Meeting Summary
 
-A private, responsive web app for planning and following up the team's work after weekly meetings: weekly Kanban board, everyone's tasks, monthly calendar, annual overview, meeting summaries drafted by Claude, and a Manager dashboard. On phones it behaves like an app — bottom tabs, one board column at a time, a floating **+** button and bottom-sheet menus.
+แอปมือถือส่วนตัวสำหรับสรุปประชุมประจำสัปดาห์ — วางข้อความหรืออัปโหลดรูป / Word / PDF ที่บอกว่า **ใครทำอะไร เมื่อไร** แล้วให้ Claude สรุปเป็นภาพรวมที่อ่านง่าย
 
-**The Manager edits, the team views.** Team members sign in with their employee ID and their own password to see the whole picture; only the Manager changes tasks. This is enforced by the database, not just by hidden buttons.
+- ประเด็นสำคัญ · มติ · กำหนดส่งรายวัน 7 วัน · งานรายคนพร้อมวงกลมความคืบหน้า · เรื่องที่ต้องติดตาม
+- แตะงานเพื่อติ๊กว่าเสร็จ · คัดลอกเป็นข้อความส่ง LINE · แชร์
+- ประวัติเก็บในเครื่องของคุณ (localStorage) ไม่มีฐานข้อมูล ไม่เก็บอะไรบนเซิร์ฟเวอร์
+- ไม่มี build step: หน้าเว็บ `public/index.html` + ฟังก์ชันเดียว `api/summarize.js` (ไม่มี dependency)
 
-**Stack:** Next.js 15 · React 19 · TypeScript · Tailwind CSS 4 · Supabase (Postgres, Auth, Realtime) · Claude API (optional) · Netlify or Vercel
+## ตั้งค่าบน Vercel (2 ค่าเท่านั้น)
 
-| Desktop | Phone |
+**Settings → Environment Variables** (ติ๊ก Production) แล้ว **Redeploy**
+
+| Name | ค่า |
 |---|---|
-| ![Weekly board](docs/screenshots/board-desktop.png) | ![Phone board](docs/screenshots/board-phone.png) |
+| `APP_PASSWORD` | รหัสผ่านที่คุณตั้งเอง ยาว 6 ตัวขึ้นไป (ใช้เปิดแอป) |
+| `ANTHROPIC_API_KEY` | key จาก platform.claude.com (ตั้ง monthly limit ไว้ เช่น $5) |
 
-> Screenshots use placeholder people and `[SAMPLE]` tasks. The real database starts empty.
+ถ้า Vercel เคยตั้ง Framework เป็น Next.js ไว้ ไฟล์ `vercel.json` จะเขียนทับให้เป็น "Other" เอง
 
-## ภาษาไทยโดยย่อ
+เปิดบนมือถือ → Safari: Share → **Add to Home Screen** จะได้เป็นไอคอนแอป
 
-- **ใช้ฟรีได้:** Supabase Free + Netlify Free (ดูขั้นตอนใน [docs/02](docs/02-setup-deployment.md))
-- **Manager แก้ไขคนเดียว** ทีมล็อกอินด้วยรหัสพนักงาน + รหัสผ่านของตัวเอง เพื่อดูงานของทีมและงานเพื่อน
-- **บันทึกประชุม:** วางข้อความ หรืออัปโหลด Word / รูป screenshot แล้วให้ Claude สรุป สร้างงานใหม่ และอัปเดตความคืบหน้าของงานเดิม ต้องใส่ `ANTHROPIC_API_KEY` (จ่ายตามการใช้ ประมาณไม่กี่บาทต่อการประชุมหนึ่งครั้ง)
-- **รายชื่อทีมไม่อยู่ใน GitHub** เพราะ repo นี้เป็น public ไฟล์ `supabase/roster.local.sql` ส่งให้แยกต่างหาก
+## ข้อจำกัด
+- Vercel รับข้อมูลต่อครั้งไม่เกิน ~4.5 MB: รูปถูกย่อในเครื่องก่อนส่ง รวมไม่เกิน ~4 MB ต่อการสรุป
+- ข้อความ/รูปที่ส่งไปสรุปจะถูกประมวลผลโดย Claude API
+- ใช้ Vercel Hobby ได้ถ้าเป็นการใช้ส่วนตัวคนเดียว; ถ้าใช้เชิงธุรกิจ Vercel กำหนดให้ใช้แผน Pro
 
-## Documentation
-
-| | |
-|---|---|
-| [1. Product overview, architecture & data model](docs/01-overview-architecture.md) | Features, roles, stack, costs (free and paid), security model, tables, report definitions |
-| [2. Setup, deployment & onboarding](docs/02-setup-deployment.md) | Supabase + Netlify step by step, email (SMTP), Claude API key, first Manager account, inviting the team, backups |
-| [3. Manager configuration checklist](docs/03-manager-configuration.md) | Roster, secure employee-ID set-up, settings to decide |
-| [4. Test checklist](docs/04-test-checklist.md) | Login, permissions, task updates, meeting summaries, filters, dashboard maths, phone layout |
-
-## Quick start (development)
-
-```bash
-npm install
-cp .env.example .env.local      # Supabase URL + keys, site URL, throttle secret, optional ANTHROPIC_API_KEY
-npm run dev
-```
-
-In the Supabase SQL editor run `supabase/migrations/0001_schema.sql`, then `supabase/seed.sql`, then your private `supabase/roster.local.sql` (format: `supabase/roster.example.sql`). Create the Manager's login with `npm run bootstrap:manager`.
-
-## Project layout
-
-```
-src/
-  middleware.ts            session refresh, sign-in gate, CSP nonce
-  app/
-    login/ forgot-password/ set-password/ auth/   sign-in, reset, invitation flow
-    (app)/board            weekly Kanban (segmented columns on phones)
-    (app)/tasks            list + filters, task page, create
-    (app)/people           individual view
-    (app)/calendar         monthly calendar
-    (app)/year             annual overview
-    (app)/meetings         meetings; new = paste/upload notes → Claude draft → review → save
-    (app)/dashboard        Manager dashboard
-    (app)/admin            Team admin, projects
-    api/export             CSV / JSON export (Manager)
-  components/              board, forms, charts, filters, action sheet, FAB, meeting summarizer
-  lib/                     auth guard, data access, validation, throttling, dates, filters, stats,
-                           ai.ts (Claude API call, server only), ai-draft.ts (prompt + answer cleaning)
-supabase/
-  migrations/0001_schema.sql   tables, triggers, row-level security (Manager writes, team reads)
-  seed.sql                     Manager + "General" project (no demo data)
-  roster.example.sql           format for the private team list
-  templates/                   invitation & reset emails
-  tests/                       RLS / trigger tests (plain PostgreSQL)
-scripts/bootstrap-manager.ts   one-time Manager account set-up
-```
-
-## Tests
-
-```bash
-npm test             # dates, filters, dashboard figures, meeting-summary parsing (17 tests)
-npm run typecheck
-# database security tests — see docs/02-setup-deployment.md §G
-```
+เวอร์ชันเต็ม (ทีม 13 คน, Supabase, Kanban) อยู่ที่ branch `full-planner-v1`
